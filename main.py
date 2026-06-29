@@ -21,11 +21,27 @@ class ProxyHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
-        self.send_response(200)
-        self.send_cors_headers()
-        self.send_header("Content-Type", "text/plain")
-        self.end_headers()
-        self.wfile.write(b"SMCU proxy is running.")
+        if self.path in ("/", "/index.html", "/smcu-chat-widget.html"):
+            try:
+                html_path = os.path.join(os.path.dirname(__file__), "smcu-chat-widget.html")
+                with open(html_path, "rb") as f:
+                    content = f.read()
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html")
+                self.send_header("X-Frame-Options", "ALLOWALL")
+                self.send_header("Content-Security-Policy", "frame-ancestors *")
+                self.end_headers()
+                self.wfile.write(content)
+            except FileNotFoundError:
+                self.send_response(404)
+                self.end_headers()
+                self.wfile.write(b"Widget HTML not found.")
+        else:
+            self.send_response(200)
+            self.send_cors_headers()
+            self.send_header("Content-Type", "text/plain")
+            self.end_headers()
+            self.wfile.write(b"SMCU proxy is running.")
 
     def do_POST(self):
         if self.path == "/chat":
