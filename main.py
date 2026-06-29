@@ -2,8 +2,7 @@ import os
 import json
 import urllib.request
 import urllib.error
-import hmac
-import hashlib
+import urllib.parse
 import time
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
@@ -14,6 +13,7 @@ BOT_APP_SECRET = os.environ.get("BOT_APP_SECRET", "")
 PORT = int(os.environ.get("PORT", 8080))
 
 TEAMS_TOKEN_URL = "https://login.microsoftonline.com/botframework.com/oauth2/v2.0/token"
+TEAMS_TOKEN_URL_FALLBACK = "https://login.microsoftonline.com/5cb7efef-7ee3-4f9f-88c1-836c7c65fcc5/oauth2/v2.0/token"
 TEAMS_REPLY_BASE = "https://smba.trafficmanager.net/apis"
 
 _bot_token_cache = {"token": None, "expires": 0}
@@ -69,9 +69,6 @@ def send_teams_reply(service_url, conversation_id, activity_id, text):
             pass
     except urllib.error.HTTPError as e:
         print(f"Teams reply error {e.code}: {e.read().decode()}")
-
-
-import urllib.parse
 
 
 class ProxyHandler(BaseHTTPRequestHandler):
