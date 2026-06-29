@@ -23,16 +23,21 @@ def get_bot_token():
     now = time.time()
     if _bot_token_cache["token"] and now < _bot_token_cache["expires"] - 60:
         return _bot_token_cache["token"]
-    data = (
-        f"grant_type=client_credentials"
-        f"&client_id={BOT_APP_ID}"
-        f"&client_secret={urllib.parse.quote(BOT_APP_SECRET)}"
-        f"&scope=https%3A%2F%2Fapi.botframework.com%2F.default"
-    ).encode()
+    params = {
+        "grant_type": "client_credentials",
+        "client_id": BOT_APP_ID,
+        "client_secret": BOT_APP_SECRET,
+        "scope": "https://api.botframework.com/.default",
+    }
+    data = urllib.parse.urlencode(params).encode()
     req = urllib.request.Request(TEAMS_TOKEN_URL, data=data,
                                   headers={"Content-Type": "application/x-www-form-urlencoded"})
-    with urllib.request.urlopen(req) as resp:
-        body = json.loads(resp.read())
+    try:
+        with urllib.request.urlopen(req) as resp:
+            body = json.loads(resp.read())
+    except urllib.error.HTTPError as e:
+        print(f"Token error {e.code}: {e.read().decode()}")
+        raise
     _bot_token_cache["token"] = body["access_token"]
     _bot_token_cache["expires"] = now + body.get("expires_in", 3600)
     return _bot_token_cache["token"]
